@@ -1648,6 +1648,44 @@ public class ServletTest extends BaseTest {
 	}
 
 	@Test
+	public void test_ResourceRangeRequest_Complete() throws Exception {
+		Map<String, List<String>> actual;
+		Bundle bundle = installBundle(TEST_BUNDLE_1);
+		Map<String, List<String>> requestHeader = new HashMap<>();
+		requestHeader.put("Range", Collections.singletonList("bytes=0-"));
+		try {
+			bundle.start();
+			actual = requestAdvisor.request("TestResource1/rangerequest.mp4", requestHeader);
+		} finally {
+			uninstallBundle(bundle);
+		}
+		Assert.assertEquals("Response Code", Collections.singletonList("206"), actual.get("responseCode"));
+		Assert.assertEquals("Content-Length", Collections.singletonList("20655"), actual.get("Content-Length"));
+		Assert.assertEquals("Accept-Ranges", Collections.singletonList("bytes"), actual.get("Accept-Ranges"));
+		Assert.assertEquals("Content-Range", Collections.singletonList("bytes 0-20654/20655"), actual.get("Content-Range"));
+	}
+
+	@Test
+	public void test_ResourceRangeRequest_WithRange() throws Exception {
+		Map<String, List<String>> actual;
+		Bundle bundle = installBundle(TEST_BUNDLE_1);
+		Map<String, List<String>> requestHeader = new HashMap<>();
+		requestHeader.put("Range", Collections.singletonList("bytes=1000-9999"));
+		try {
+			bundle.start();
+			actual = requestAdvisor.request("TestResource1/rangerequest.mp4", requestHeader);
+		} finally {
+			uninstallBundle(bundle);
+		}
+		Assert.assertEquals("Response Code", Collections.singletonList("206"), actual.get("responseCode"));
+		Assert.assertEquals("Content-Length", Collections.singletonList("9000"), actual.get("Content-Length"));
+		Assert.assertEquals("Accept-Ranges", Collections.singletonList("bytes"), actual.get("Accept-Ranges"));
+		Assert.assertEquals("Content-Range", Collections.singletonList("bytes 1000-9999/20655"), actual.get("Content-Range"));
+		Assert.assertEquals("Response Body Prefix", "901", actual.get("responseBody").get(0).substring(0, 3));
+		Assert.assertEquals("Response Body Suffix", "567", actual.get("responseBody").get(0).substring(8997, 9000));
+	}
+
+	@Test
 	public void test_Runtime() throws Exception {
 		Bundle bundle = installBundle(TEST_BUNDLE_1);
 		try {
